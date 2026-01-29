@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+
+data/raw/
+data/processed/
+
+results/*.pkl
+results/*.npy
+
+figures/*.png
+main.pdf
