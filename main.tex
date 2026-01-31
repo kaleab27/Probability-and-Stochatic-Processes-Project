@@ -71,13 +71,13 @@
 \begin{abstract}
 Cloud resource allocation must balance cost and performance under uncertain and bursty workloads.
 This project models cloud traffic using stochastic methods and optimizes autoscaling decisions
-using a Markov Decision Process (MDP) formulation. We build a trace-driven workload from the
+using a Markov Decision Process (MDP) formulation. I build a trace-driven workload from the
 Google Cluster Trace (2011) by extracting task arrivals, CPU/memory requests, and runtimes from
-raw event logs. We implement an event-driven simulator in Python to evaluate (i) static provisioning,
+raw event logs. I implement an event-driven simulator in Python to evaluate (i) static provisioning,
 (ii) a queue/backlog threshold autoscaler, and (iii) an MDP-based autoscaler trained on an aggregated
 backlog model. On the busiest 2-hour trace window (112,434 tasks), the MDP policy achieves markedly
 lower waiting times and SLA violation rates compared to a fixed-capacity baseline, at a comparable
-VM-hour cost to heuristic autoscaling. We additionally apply the same trace-driven simulation pipeline to an Alibaba OpenB pod trace (Kaggle),
+VM-hour cost to heuristic autoscaling. I additionally apply the same trace-driven simulation pipeline to an Alibaba OpenB pod trace (Kaggle),
 selecting the busiest 24-hour window (681 pods) due to the dataset’s lower event density. This provides a
 second-dataset validation of the cost--performance trade-offs observed on Google.
 \end{abstract}
@@ -108,13 +108,13 @@ This project focuses on:
 
 \section{Key simplifications (time-constrained project)}
 To deliver an end-to-end system within a tight project schedule and laptop compute constraints,
-we apply the following simplifications while preserving the core trade-off:
+I apply the following simplifications while preserving the core trade-off:
 \begin{enumerate}[leftmargin=1.2cm]
   \item \textbf{Homogeneous VM model:} all VMs have normalized capacities
   \(C^{cpu}=1\), \(C^{mem}=1\).
   \item \textbf{Requests-based admission:} tasks consume requested CPU/memory
   rather than actual usage (consistent with many scheduling approaches).
-  \item \textbf{Clean lifecycle filtering:} we keep tasks with a single unambiguous
+  \item \textbf{Clean lifecycle filtering:} I keep tasks with a single unambiguous
   \texttt{SUBMIT}\(\rightarrow\)\texttt{SCHEDULE}\(\rightarrow\)\texttt{FINISH} lifecycle and ignore
   evictions/retries/preemptions.
   \item \textbf{Simple placement:} FIFO queue with a first-fit placement across VMs.
@@ -139,12 +139,12 @@ the reward encodes the cost--performance objective.
 % ============================================================
 \chapter{Dataset: Google Cluster Trace (2011)}
 \section{Source}
-We use the Google Cluster Trace (2011, version 2), which records task lifecycle events and
+I use the Google Cluster Trace (2011, version 2), which records task lifecycle events and
 resource requests across a large production cluster. The dataset is provided as sharded
 \texttt{task\_events} CSV files in Google Cloud Storage \citep{googleclustertrace}.
 
 \section{Raw schema used}
-From \texttt{task\_events}, we use:
+From \texttt{task\_events}, I use:
 \begin{itemize}[leftmargin=1.2cm]
   \item time (microseconds since trace start),
   \item job ID, task index,
@@ -153,7 +153,7 @@ From \texttt{task\_events}, we use:
 \end{itemize}
 
 \section{Preprocessing pipeline}
-We convert raw event logs into a compact task table:
+I convert raw event logs into a compact task table:
 \[
 (\text{arrival\_time},\ \text{runtime},\ cpu\_req,\ mem\_req).
 \]
@@ -165,10 +165,10 @@ Definitions:
   \item runtime \(d = t_f - t_s\).
 \end{itemize}
 
-We filter tasks to those with \(d>0\), \(d \le 86400\) seconds, and \(0 < cpu\_req, mem\_req \le 1\).
+I filter tasks to those with \(d>0\), \(d \le 86400\) seconds, and \(0 < cpu\_req, mem\_req \le 1\).
 
 \subsection{Trace subset and window selection}
-To keep processing manageable, we download a subset of consecutive \texttt{task\_events} shards,
+To keep processing manageable, I download a subset of consecutive \texttt{task\_events} shards,
 extract clean tasks, and select the busiest 2-hour window by maximizing arrivals in a sliding
 2-hour window (1-minute bins). The selected busiest window contains 112,434 tasks.
 
@@ -184,7 +184,7 @@ For the busiest 2-hour window:
 % ============================================================
 \chapter{System and Simulation Model}
 \section{Resource model}
-We simulate a pool of identical VMs, each with normalized capacity:
+I simulate a pool of identical VMs, each with normalized capacity:
 \[
 C^{cpu}=1,\quad C^{mem}=1.
 \]
@@ -196,7 +196,7 @@ A task is placed on the first VM that can accommodate its CPU and memory request
 When a task finishes, it releases resources.
 
 \section{Simulation approach}
-We implement a discrete-event simulation:
+I implement a discrete-event simulation:
 \begin{itemize}[leftmargin=1.2cm]
   \item arrival events add tasks to the queue,
   \item completion events release resources and trigger additional placements,
@@ -205,7 +205,7 @@ We implement a discrete-event simulation:
 
 \section{Cost and performance metrics}
 \subsection{Cost}
-We measure cost as the time integral of active VM count:
+I measure cost as the time integral of active VM count:
 \[
 \text{VM-seconds} = \int_0^T k(t)\,dt,\qquad
 \text{VM-hours} = \frac{\text{VM-seconds}}{3600}.
@@ -214,7 +214,7 @@ Note: the simulation runs past the 2-hour arrival window until all tasks complet
 can exceed \(2 \times k\).
 
 \subsection{Performance and SLA metrics}
-We report:
+I report:
 \begin{itemize}[leftmargin=1.2cm]
   \item mean waiting time,
   \item p95 and p99 waiting time,
@@ -228,19 +228,19 @@ We report:
 A fixed number of VMs \(k\) remain active for the entire simulation.
 
 \section{Threshold autoscaling}
-Every \(\Delta=60\) seconds we compute an aggregated queue backlog signal:
+Every \(\Delta=60\) seconds I compute an aggregated queue backlog signal:
 \[
 Q(t) = \sum_{i \in \text{queue}} \max(c_i, m_i)\cdot d_i,
 \]
 interpretable as queued \emph{resource-seconds} of dominant demand.
 
-If \(Q(t)\) exceeds an upper threshold, we scale up by a step size; if it falls below a lower
-threshold, we scale down by a step size. Step sizes are used to ensure responsiveness under
+If \(Q(t)\) exceeds an upper threshold, I scale up by a step size; if it falls below a lower
+threshold, I scale down by a step size. Step sizes are used to ensure responsiveness under
 bursty demand.
 
 \section{MDP-based autoscaling (aggregated model)}
 A full MDP state including per-VM allocations and remaining runtimes is too large for a short
-project. Instead, we use an aggregated MDP approximation:
+project. Instead, I use an aggregated MDP approximation:
 \begin{itemize}[leftmargin=1.2cm]
   \item State: \(\state=(k, \text{bin}(Q))\), where \(k\) is active VMs and \(\text{bin}(Q)\)
   discretizes queued work.
@@ -249,13 +249,13 @@ project. Instead, we use an aggregated MDP approximation:
   from trace-derived arrivals aggregated per control interval.
   \item Reward: negative weighted sum of VM cost, backlog, and action magnitude.
 \end{itemize}
-We learn the policy using tabular Q-learning on the aggregated MDP, then evaluate it in the
+I learn the policy using tabular Q-learning on the aggregated MDP, then evaluate it in the
 detailed event-driven simulator.
 
 % ============================================================
 \chapter{Experiments}
 \section{Experimental setup}
-We evaluate on the busiest 2-hour window extracted from the Google trace. Control interval is
+I evaluate on the busiest 2-hour window extracted from the Google trace. Control interval is
 \(\Delta=60\) seconds. The MDP training estimates capacity bounds \(k_{\min}=186\) and
 \(k_{\max}=1200\) from trace-derived arrival work statistics.
 
@@ -270,7 +270,7 @@ We evaluate on the busiest 2-hour window extracted from the Google trace. Contro
 \chapter{Results and Discussion}
 
 \section{Experimental context and metrics}
-We evaluate three allocation strategies on the busiest 2-hour window extracted from the Google Cluster Trace
+I evaluate three allocation strategies on the busiest 2-hour window extracted from the Google Cluster Trace
 (112,434 tasks). The arrival window is 2 hours, but the simulation continues until all tasks complete; therefore,
 cost is measured as VM-hours over the full completion horizon. Performance is evaluated via waiting-time percentiles
 (p95/p99) and SLA violation rates, where SLA60 denotes \(P(W > 60\text{s})\) and SLA120 denotes \(P(W > 120\text{s})\).
@@ -313,7 +313,7 @@ comparable to the threshold heuristic in this configuration.
 
 \section{Matched-SLA comparisons (fair static baselines)}
 A single static baseline can be misleading because static provisioning represents a family of policies parameterized by \(k\).
-To ensure fair comparisons, we perform matched-SLA baselining: for each autoscaling policy we select a static capacity that
+To ensure fair comparisons, I perform matched-SLA baselining: for each autoscaling policy I select a static capacity that
 achieves approximately the same SLA60 violation rate, then compare cost and tail latency.
 
 \begin{table}[H]
@@ -373,7 +373,7 @@ queueing and improving SLA metrics.
 \chapter{Limitations}
 \begin{itemize}[leftmargin=1.2cm]
   \item \textbf{Homogeneous capacity:} real clusters have heterogeneous machines and VM types.
-  \item \textbf{Requests vs usage:} we use requested CPU/memory, not actual utilization.
+  \item \textbf{Requests vs usage:} I use requested CPU/memory, not actual utilization.
   \item \textbf{Ignored failure modes:} retries, evictions, and preemptions are filtered out.
   \item \textbf{Simplified scheduler:} FIFO + first-fit does not reproduce production scheduling constraints.
   \item \textbf{Aggregated MDP:} the MDP state compresses dynamics into a single queued-work signal.
@@ -383,26 +383,26 @@ queueing and improving SLA metrics.
 % ============================================================
 \chapter{Dataset: Alibaba OpenB Pod Trace (Kaggle)}
 \section{Source}
-To satisfy the assignment requirement of using Alibaba traces, we use the \emph{Alibaba OpenB pod trace}
+To satisfy the assignment requirement of using Alibaba traces, I use the \emph{Alibaba OpenB pod trace}
 available via Kaggle \citep{alibabaopenbkaggle}. The dataset contains pod-level resource requests and lifecycle
-timestamps, enabling conversion to the same task format used in our simulator.
+timestamps, enabling conversion to the same task format used in my simulator.
 
 \section{Raw schema used}
-We use the following fields from the pod list tables (e.g., \texttt{openb\_pod\_list\_default.csv}):
+I use the following fields from the pod list tables (e.g., \texttt{openb\_pod\_list\_default.csv}):
 \begin{itemize}[leftmargin=1.2cm]
   \item \texttt{cpu\_milli} (CPU request in millicores),
   \item \texttt{memory\_mib} (memory request in MiB),
   \item \texttt{creation\_time}, \texttt{scheduled\_time}, \texttt{deletion\_time} (timestamps),
 \end{itemize}
-and we use node capacity fields from \texttt{openb\_node\_list\_all\_node.csv}:
+and I use node capacity fields from \texttt{openb\_node\_list\_all\_node.csv}:
 \texttt{cpu\_milli} and \texttt{memory\_mib}.
 
 \section{Preprocessing and normalization}
-We convert each pod record into:
+I convert each pod record into:
 \[
 (\text{arrival\_time},\ \text{runtime},\ cpu\_req,\ mem\_req).
 \]
-We set:
+I set:
 \begin{itemize}[leftmargin=1.2cm]
   \item arrival time \(t_a\) = \texttt{creation\_time},
   \item start time \(t_s\) = \texttt{scheduled\_time} (fallback to \texttt{creation\_time} if missing/0),
@@ -410,14 +410,14 @@ We set:
   \item runtime \(d = t_f - t_s\).
 \end{itemize}
 
-To match our homogeneous VM simulator, we normalize CPU and memory requests by node capacities observed in the trace:
+To match my homogeneous VM simulator, I normalize CPU and memory requests by node capacities observed in the trace:
 \(C^{cpu} = 32000\) millicores and \(C^{mem} = 262144\) MiB (from \texttt{openb\_node\_list\_all\_node.csv}),
-so that \(cpu\_req, mem\_req \in (0,1]\). We filter to pods with positive runtime and requests that fit within
+so that \(cpu\_req, mem\_req \in (0,1]\). I filter to pods with positive runtime and requests that fit within
 a single normalized VM.
 
 \section{Window selection}
 Unlike the Google trace, this Alibaba OpenB dataset is relatively sparse over time. A 2-hour window contained
-too few events for stable autoscaling evaluation, so we select the busiest 24-hour window using a sliding-window
+too few events for stable autoscaling evaluation, so I select the busiest 24-hour window using a sliding-window
 arrival count. The selected busiest 24-hour window contains 681 pods.
 
 
@@ -425,7 +425,7 @@ arrival count. The selected busiest 24-hour window contains 681 pods.
 \chapter{Results on Alibaba Trace (OpenB Pods)}
 \section{Main quantitative results}
 Table~\ref{tab:alibaba_main_results} summarizes cost and performance on the busiest 24-hour Alibaba window (681 pods).
-Because many pods start immediately when sufficient capacity is provisioned, p95 can become 0; therefore we also report
+Because many pods start immediately when sufficient capacity is provisioned, p95 can become 0; therefore I also report
 SLA violation rates and p99.
 
 \begin{table}[H]
@@ -487,7 +487,7 @@ Figures~\ref{fig:alibaba_static_ts}--\ref{fig:alibaba_mdp_ts} illustrate how the
 \chapter{Conclusion}
 This project demonstrates how stochastic modeling and MDP-based decision-making can guide cloud resource
 allocation under uncertainty. Using a trace-driven workload from the Google Cluster Trace and an event-driven
-simulator, we quantify the cost--performance trade-offs between static provisioning, heuristic threshold scaling,
+simulator, I quantify the cost--performance trade-offs between static provisioning, heuristic threshold scaling,
 and an MDP autoscaler. Results show that autoscaling policies can dramatically reduce waiting times and SLA
 violations during bursts, and an MDP policy can further reduce SLA60 at comparable cost by adapting capacity
 to the workload over time.
