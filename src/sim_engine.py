@@ -107,7 +107,7 @@ def simulate(
         while queue:
             t = queue[0]
             placed = False
-            for vm_id, vm in enumerate(vms):
+            for vm_id, vm in enumerate(vms[:k]):
                 if vm.used_cpu + t.cpu <= 1.0 and vm.used_mem + t.mem <= 1.0:
                     queue.popleft()
                     vm.used_cpu += t.cpu
@@ -125,21 +125,21 @@ def simulate(
         new_k = int(max(k_min, min(k_max, new_k)))
         if new_k == k:
             return
+
         if new_k > k:
             for _ in range(new_k - k):
                 vms.append(VM())
             k = new_k
             return
-        # scale down only idle VMs
-        to_remove = k - new_k
-        if to_remove <= 0:
-            return
-        idle_ids = [idx for idx, vm in enumerate(vms) if vm.used_cpu == 0 and vm.used_mem == 0]
-        remove_ids = set(idle_ids[:to_remove])
-        if not remove_ids:
-            return
-        vms = [vm for idx, vm in enumerate(vms) if idx not in remove_ids]
-        k = len(vms)
+
+        # Scale down by "deactivating" VMs from the end only if they are idle.
+        # We do NOT delete entries from `vms`, to keep completion vm_id indices valid.
+        while k > new_k:
+            vm = vms[k - 1]
+            if vm.used_cpu == 0 and vm.used_mem == 0:
+                k -= 1
+            else:
+                break
 
     def qbin(x: float) -> int:
         assert q_bins is not None

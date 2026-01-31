@@ -1,0 +1,32 @@
+[
+  {
+    "policy": "static",
+    "tasks": 681,
+    "mean_wait_s": 0.0,
+    "p95_wait_s": 0.0,
+    "p99_wait_s": 0.0,
+    "sla60_violation": 0.0,
+    "sla120_violation": 0.0,
+    "vm_seconds": 9348290.0
+  },
+  {
+    "policy": "threshold",
+    "tasks": 681,
+    "mean_wait_s": 35.5726872246696,
+    "p95_wait_s": 198.0,
+    "p99_wait_s": 889.8000000000116,
+    "sla60_violation": 0.11747430249632893,
+    "sla120_violation": 0.08076358296622614,
+    "vm_seconds": 520720.0
+  },
+  {
+    "policy": "mdp",
+    "tasks": 681,
+    "mean_wait_s": 1.4640234948604993,
+    "p95_wait_s": 0.0,
+    "p99_wait_s": 80.40000000000009,
+    "sla60_violation": 0.014684287812041116,
+    "sla120_violation": 0.0,
+    "vm_seconds": 728770.0
+  }
+]

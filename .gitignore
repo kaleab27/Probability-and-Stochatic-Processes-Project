@@ -9,4 +9,3 @@ results/*.pkl
 results/*.npy
 
 figures/*.png
-main.pdf
